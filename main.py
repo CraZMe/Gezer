@@ -94,15 +94,16 @@ class MainApp(MDApp):
         self.media = vlc.MediaPlayer(video_link.url)
         self.media.play()
 
-        current_time = 0
+        current_time = 0.1
         while current_time < video_length:
             if self.media.is_playing():
                 time.sleep(0.1)
                 current_time += 0.1
                 self.root.ids.progress_bar.value = (100 * current_time / video_length)
 
-            elif str(self.media.get_state()) == "State.Stopped" or self.media.get_state() == "State.Ended":
+            elif str(self.media.get_state()) == "State.Stopped" or str(self.media.get_state()) == "State.Ended":
                 break
+
         if not self.stop_shuffling:
             self.shuffle()
 
