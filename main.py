@@ -22,7 +22,8 @@ class MainApp(MDApp):
         self.theme_cls.primary_palette = "Purple"
         self.theme_cls.accent_palette = "Purple"
         self.theme_cls.accent_hue = "600"
-
+        self.icon = 'carrot.png'
+        self.title = 'GEZER'
         return Builder.load_string(screen)
 
     def on_start(self):
@@ -51,12 +52,13 @@ class MainApp(MDApp):
         clip2 = "https://www.youtube.com/watch?v=" + "{}".format(self.search_results[result_num])
         video = pafy.new(clip2)
         video_name = video.title
+        video_length = video.length
         video_link = video.getbestaudio()
-        print("Now playing: " + video_name)
 
         self.media = vlc.MediaPlayer(video_link.url)
         self.media.play()
         self.update_title(video_name)
+        time.sleep(video_length)
 
     def shuffle(self):
         self.media.stop()
@@ -168,7 +170,7 @@ MDScreen:
 """
 
 Window.size = (400, 300)
-
+Window.icon = 'carrot.png'
 Window.borderless = True
 Window.top = 50
 Window.left = 1450
