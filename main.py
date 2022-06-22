@@ -34,15 +34,20 @@ class MainApp(MDApp):
         self.artists = file.readlines()
         self.num_of_artists = len(self.artists)
         self.search_results = []
+        self.stop_shuffling = True
 
     def ButtonAction_take_request(self, text_field):
         self.media.stop()
+        self.stop_shuffling = True
         self.streamer = threading.Thread(target=lambda x: self.play(str(text_field.text), 0), args=(50,))
         self.streamer.start()
 
     def ButtonAction_shuffle(self):
-        self.streamer = threading.Thread(target=lambda x: self.shuffle(), args=(50,))
-        self.streamer.start()
+        self.media.stop()
+        if self.stop_shuffling:
+            self.stop_shuffling = False
+            self.shuffler = threading.Thread(target=lambda x: self.shuffle(), args=(50,))
+            self.shuffler.start()
 
     def play(self, name, result_num):
 
@@ -58,7 +63,16 @@ class MainApp(MDApp):
         self.media = vlc.MediaPlayer(video_link.url)
         self.media.play()
         self.update_title(video_name)
-        time.sleep(video_length)
+
+        current_time = 0
+        while current_time < video_length:
+            if self.media.is_playing():
+                time.sleep(0.1)
+                current_time += 0.1
+                self.root.ids.progress_bar.value = (100 * current_time / video_length)
+
+            elif str(self.media.get_state()) == "State.Stopped" or self.media.get_state() == "State.Ended":
+                break
 
     def shuffle(self):
         self.media.stop()
@@ -71,7 +85,7 @@ class MainApp(MDApp):
         self.search_results = re.findall(r"watch\?v=(\S{11})", format_url.read().decode())
 
         result_num = random.randint(0, len(self.search_results) - 1)
-        clip2 = "https://www.youtube.com/watch?v=" + "{}".format(self.search_results[result_num])
+        clip2 = "https://www.youtube.com/watch?v=" + "{}".format(self.search_results[result_num // 10])
         video = pafy.new(clip2)
         video_name = video.title
         video_link = video.getbestaudio()
@@ -79,8 +93,18 @@ class MainApp(MDApp):
         self.update_title(video_name)
         self.media = vlc.MediaPlayer(video_link.url)
         self.media.play()
-        time.sleep(video_length)
-        self.shuffle()
+
+        current_time = 0
+        while current_time < video_length:
+            if self.media.is_playing():
+                time.sleep(0.1)
+                current_time += 0.1
+                self.root.ids.progress_bar.value = (100 * current_time / video_length)
+
+            elif str(self.media.get_state()) == "State.Stopped" or self.media.get_state() == "State.Ended":
+                break
+        if not self.stop_shuffling:
+            self.shuffle()
 
     def stop_streamer(self):
         self.media.stop()
@@ -166,7 +190,13 @@ MDScreen:
         opacity: 0.2
         on_enter:   self.text_color = app.theme_cls.primary_color
         on_leave:   self.text_color = "000000"
-
+    
+    MDProgressBar:
+        id: progress_bar
+        value: 0
+        color: app.theme_cls.accent_color
+        pos_hint: {'center_x': .5, 'center_y': 0.59}
+        size_hint_x: .4
 """
 
 Window.size = (400, 300)
